@@ -6,6 +6,12 @@ A Chrome extension that routes browser traffic through a **real WireGuard tunnel
 
 ## Architecture
 
+A Chrome extension that routes browser traffic through a **real WireGuard tunnel** via a small local companion program. The tunnel runs entirely in userspace on your own machine (wireguard-go + gVisor netstack) and is exposed to the browser as a local SOCKS5 proxy over Chrome's native messaging host model. No kernel driver, no separate WireGuard app, no remote relay service.
+
+> **Status: PREVIEW.** The companion and extension have passed local tests on Linux/Chromium. The Windows binaries in this release are cross-compiled and PE-validated, but **have not yet been run on a real Windows machine**. Treat this as an early preview, not production software.
+
+## Architecture
+
 ```
 Chrome extension  <--native messaging-->  companion (Go)  <--WireGuard UDP-->  your peer
       |                                        |
