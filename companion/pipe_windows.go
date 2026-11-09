@@ -46,7 +46,7 @@ func (p *pipeController) dialLocked() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	h, err := windows.CreateFile(path, windows.GENERIC_READ|windows.GENERIC_WRITE, 0, nil, windows.OPEN_EXISTING, 0, 0)
+	h, err := windows.CreateFile(path, windows.GENERIC_READ|windows.GENERIC_WRITE, 0, nil, windows.OPEN_EXISTING, windows.SECURITY_SQOS_PRESENT|windows.SECURITY_IDENTIFICATION, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -119,3 +119,5 @@ func (p *pipeController) Disconnect(_ string) {
 // hostController returns the tunnel owner for the native messaging host on
 // Windows: the background service over its ACL'd pipe.
 func hostController() tunnelController { return newPipeController() }
+
+func (p *pipeController) CloseControl() { p.mu.Lock(); defer p.mu.Unlock(); _ = p.closeLocked() }

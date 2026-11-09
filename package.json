@@ -1,0 +1,19 @@
+{
+  "name": "wireguard-companion-tests",
+  "version": "0.2.0",
+  "description": "Local Chromium integration tests for WireGuard Companion",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node tests/integration.cjs",
+    "test:popup": "node tests/chrome.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  },
+  "private": true
+}

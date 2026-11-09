@@ -87,7 +87,7 @@ func runHost(t tunnelController, socksAddr string) error {
 		var req request
 		if err := readMsg(in, &req); err != nil {
 			// EOF or protocol error: extension/browser went away.
-			t.Disconnect("host channel closed")
+			hostChannelClosed(t)
 			return nil
 		}
 		resp := response{ID: req.ID, OK: true}
@@ -165,8 +165,18 @@ func runHost(t tunnelController, socksAddr string) error {
 			resp.OK, resp.Error = false, "unknown cmd "+req.Cmd
 		}
 		if err := send(resp); err != nil {
-			t.Disconnect("host channel write failed")
+			hostChannelClosed(t)
 			return nil
 		}
 	}
+}
+
+// Closing Chrome closes only its control connection on Windows. The service
+// owns the tunnel; Unix still has an in-process owner that must be torn down.
+func hostChannelClosed(t tunnelController) {
+	if c, ok := t.(interface{ CloseControl() }); ok {
+		c.CloseControl()
+		return
+	}
+	t.Disconnect("host channel closed")
 }
