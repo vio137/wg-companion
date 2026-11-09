@@ -14,3 +14,5 @@ func uninstallService() error { return fmt.Errorf("services are Windows-only") }
 func controlService(cmd string) error {
 	return fmt.Errorf("services are Windows-only")
 }
+
+func preflightService() error { return fmt.Errorf("services are Windows-only") }

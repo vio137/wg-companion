@@ -14,7 +14,6 @@ BrandingText "Local WireGuard tunnel · Windows preview"
 !define MUI_WELCOMEPAGE_TEXT "Install the local WireGuard background service and Chrome extension files.$\r$\n$\r$\nPREVIEW: Windows runtime verification is pending. TCP proxy only, not a system VPN. No code-signing certificate. Do not disable Windows security to install.$\r$\n$\r$\nAdministrator approval is needed for the service. Start setup from the desktop of the person who will use it. No cloud account is created. Saved profiles remain private to that Windows user."
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "../LICENSE"
-!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_TEXT "The background service is installed. A running service does not mean a connected tunnel.$\r$\n$\r$\nAfter closing setup, open WireGuard Companion from Start in your normal desktop session. It starts automatically next sign-in.$\r$\n$\r$\nChrome: Developer mode > Load unpacked > select the extension folder in your install directory. Import a profile in Chrome. Read README-WINDOWS.md for limits."
 !insertmacro MUI_PAGE_FINISH
@@ -30,13 +29,24 @@ Function .onInit
 FunctionEnd
 Section "Companion + service" SecMain
  SetShellVarContext all
+ ; Fixed protected path. A LocalService binary must never be user-writable.
+ StrCpy $INSTDIR "$PROGRAMFILES64\WireGuard Companion"
+ InitPluginsDir
+ SetOutPath "$PLUGINSDIR"
+ File /oname=preflight.exe "../build/windows/wg-companion.exe"
+ ExecWait '"$PLUGINSDIR\preflight.exe" preflight-service' $0
+ ${If} $0 != 0
+  MessageBox MB_ICONSTOP "Setup preflight failed (code $0). Nothing was copied to Program Files. Use the intended user's desktop and uninstall an existing service first."
+  SetErrorLevel 1
+  Abort
+ ${EndIf}
  SetOutPath "$INSTDIR"
  File "../build/windows/wg-companion.exe"
  File "../build/windows/wg-tray.exe"
- File "../dist/WireGuard-Companion-Windows-x64/bin/wgcf.exe"
+ File "../build/windows/wgcf.exe"
  File "../LICENSE"
  File "../installer/README-WINDOWS.md"
- File "../dist/WireGuard-Companion-Windows-x64/THIRD-PARTY.md"
+ File "../THIRD-PARTY.md"
  SetOutPath "$INSTDIR\extension"
  File /r "../extension/*"
  SetOutPath "$INSTDIR"

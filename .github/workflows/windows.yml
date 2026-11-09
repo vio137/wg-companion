@@ -43,8 +43,24 @@ jobs:
           ./build/windows/wg-companion.exe uninstall
           if ($LASTEXITCODE -ne 0) { throw 'native uninstall failed' }
           ./build/windows/wg-companion.exe version
+      - name: Build unsigned installer from pinned dependencies
+        shell: pwsh
+        run: |
+          $nsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS'
+          if (-not (Test-Path "$nsis/makensis.exe")) {
+            choco install nsis --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'NSIS install failed' }
+          }
+          $env:Path = "$nsis;$env:Path"
+          ./tools/build-windows.ps1
+      - name: Capture real installer welcome and license pixels (no install)
+        shell: pwsh
+        run: ./tools/inspect-installer.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: windows-test-binaries-not-a-release
-          path: build/windows/*.exe
+          path: |
+            build/windows/*.exe
+            build/windows/*.png
+            dist/*Setup*.exe
           retention-days: 7

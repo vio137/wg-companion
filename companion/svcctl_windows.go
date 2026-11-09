@@ -101,6 +101,23 @@ func svcManager() (*mgr.Mgr, error) {
 	return m, nil
 }
 
+// No writes: used before the installer copies or replaces any binaries.
+func preflightService() error {
+	if _, err := desktopOwnerSID(); err != nil {
+		return err
+	}
+	m, err := svcManager()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+	if s, err := m.OpenService(serviceName); err == nil {
+		s.Close()
+		return fmt.Errorf("existing service found; uninstall it before updating")
+	}
+	return nil
+}
+
 func installService() error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -127,12 +144,16 @@ func installService() error {
 		ServiceStartName: `NT AUTHORITY\LocalService`,
 	}, "service")
 	if err != nil {
+		_ = registry.DeleteKey(registry.LOCAL_MACHINE, regPath)
 		return fmt.Errorf("create service: %w", err)
 	}
 	defer s.Close()
 	_ = eventlog.InstallAsEventCreate(serviceName, eventlog.Error|eventlog.Warning|eventlog.Info)
 	if err := s.Start(); err != nil {
-		return fmt.Errorf("service installed but failed to start: %w", err)
+		_ = s.Delete()
+		_ = eventlog.Remove(serviceName)
+		_ = registry.DeleteKey(registry.LOCAL_MACHINE, regPath)
+		return fmt.Errorf("service startup failed; registration rolled back: %w", err)
 	}
 	if err := installMachineHost(); err != nil {
 		_, _ = s.Control(svc.Stop)

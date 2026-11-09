@@ -81,6 +81,10 @@ func main() {
 		if err := runService(); err != nil {
 			fatal(err)
 		}
+	case "preflight-service":
+		if err := preflightService(); err != nil {
+			fatal(err)
+		}
 	case "install-service":
 		if err := installService(); err != nil {
 			fatal(err)

@@ -16,7 +16,7 @@ do not turn off SmartScreen, antivirus or company policy to install.
 3. Open WireGuard Companion from Start as your normal user. The tray starts on
    that user's next sign-in. The service starts with Windows as LocalService.
 4. In chrome://extensions enable Developer mode, Load unpacked, and choose
-   C:\Program Files\WireGuard Companion\extension (or your chosen install path).
+   C:\Program Files\WireGuard Companion\extension (fixed protected install path).
    The extension ID is dfcikohmdkdkkaampidiknlgkognlkah.
 5. Add profile in Chrome. Import .conf, or explicitly agree to Cloudflare's terms
    and opt into unofficial wgcf WARP registration. No registration occurs at install.

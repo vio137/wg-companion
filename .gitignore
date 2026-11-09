@@ -11,3 +11,5 @@ dist/
 
 /companion/wireguard-companion
 /research/
+
+/.cache/
