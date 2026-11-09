@@ -23,7 +23,7 @@ BrandingText "Local WireGuard tunnel - Windows preview"
 !insertmacro MUI_LANGUAGE "English"
 Function .onInit
  ${IfNot} ${RunningX64}
-  MessageBox MB_ICONSTOP "This package needs 64-bit Windows."
+  MessageBox MB_ICONSTOP "This package needs 64-bit Windows." /SD IDOK
   Abort
  ${EndIf}
  SetRegView 64
@@ -37,7 +37,7 @@ Section "Companion + service" SecMain
  File /oname=preflight.exe "..\build\windows\wg-companion.exe"
  ExecWait '"$PLUGINSDIR\preflight.exe" preflight-service' $0
  ${If} $0 != 0
-  MessageBox MB_ICONSTOP "Setup preflight failed (code $0). Nothing was copied to Program Files. Use the intended user's desktop and uninstall an existing service first."
+  MessageBox MB_ICONSTOP "Setup preflight failed (code $0). Nothing was copied to Program Files. Use the intended user's desktop and uninstall an existing service first." /SD IDOK
   SetErrorLevel 1
   Abort
  ${EndIf}
@@ -55,7 +55,7 @@ Section "Companion + service" SecMain
  SetOutPath "$INSTDIR"
  ExecWait '"$INSTDIR\wg-companion.exe" install-service' $0
  ${If} $0 != 0
-  MessageBox MB_ICONSTOP "Service setup failed (code $0). No successful installation is claimed. Start setup from the intended user's interactive desktop; an existing install must be removed before reinstalling. See README-WINDOWS.md."
+  MessageBox MB_ICONSTOP "Service setup failed (code $0). No successful installation is claimed. Start setup from the intended user's interactive desktop; an existing install must be removed before reinstalling. See README-WINDOWS.md." /SD IDOK
   SetErrorLevel 1
   Abort
  ${EndIf}
@@ -78,7 +78,7 @@ Section "Uninstall"
  Abort
  ExecWait '"$INSTDIR\wg-companion.exe" uninstall-service' $0
  ${If} $0 != 0
-  MessageBox MB_ICONSTOP "Service removal failed (code $0). Program files have been kept so you can retry."
+  MessageBox MB_ICONSTOP "Service removal failed (code $0). Program files have been kept so you can retry." /SD IDOK
   Abort
  ${EndIf}
  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\WGCompanion"

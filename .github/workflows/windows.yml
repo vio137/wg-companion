@@ -56,6 +56,9 @@ jobs:
       - name: Capture real installer welcome and license pixels (no install)
         shell: pwsh
         run: ./tools/inspect-installer.ps1
+      - name: Actual installer headless-owner fail-closed test (no desktop install)
+        shell: pwsh
+        run: ./tools/test-installer-safety.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: windows-test-binaries-not-a-release
