@@ -32,6 +32,7 @@ type TunnelStats struct {
 }
 
 type Tunnel struct {
+	opMu   sync.Mutex // serialize connect/disconnect across independent control clients
 	mu     sync.Mutex
 	dev    *device.Device
 	tnet   *netstack.Net
@@ -91,6 +92,8 @@ func readPeerStats(dev *device.Device) (handshakeUnix, rx, tx int64) {
 }
 
 func (t *Tunnel) Connect(cfg *WGConfig, socksAddr string) error {
+	t.opMu.Lock()
+	defer t.opMu.Unlock()
 	t.mu.Lock()
 	if t.dev != nil {
 		t.mu.Unlock()
@@ -150,6 +153,8 @@ func (t *Tunnel) Connect(cfg *WGConfig, socksAddr string) error {
 }
 
 func (t *Tunnel) Disconnect(reason string) {
+	t.opMu.Lock()
+	defer t.opMu.Unlock()
 	t.mu.Lock()
 	dev, proxy := t.dev, t.proxy
 	t.dev, t.proxy, t.tnet = nil, nil, nil

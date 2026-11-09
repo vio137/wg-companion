@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -77,5 +78,26 @@ func TestHostnameEndpoint(t *testing.T) {
 	}
 	if _, err := buildUAPI(c); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Multiple service clients must not leave a tunnel alive after the final
+// disconnect or race the ownership of a userspace device/proxy.
+func TestConcurrentTunnelControl(t *testing.T) {
+	cfg, err := ParseWGConfig("concurrent", sampleConf())
+	if err != nil {
+		t.Fatal(err)
+	}
+	tn := NewTunnel()
+	defer tn.Disconnect("cleanup")
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _ = tn.Connect(cfg, "127.0.0.1:0"); tn.Disconnect("concurrent test") }()
+	}
+	wg.Wait()
+	tn.Disconnect("final test off")
+	if st := tn.Stats(); st.State != "disconnected" || st.SOCKSPort != 0 {
+		t.Fatalf("stale active state after disconnect: %+v", st)
 	}
 }

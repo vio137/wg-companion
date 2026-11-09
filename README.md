@@ -17,6 +17,13 @@ Chrome extension  <--native messaging-->  companion (Go)  <--WireGuard UDP-->  y
 - **extension/** - Manifest V3 Chrome extension: connect/disconnect UI, per-profile proxy control, WebRTC leak settings, state survives popup close.
 - **tests/** - Chromium integration suite (real WireGuard peer, DNS, fail-closed on crash, disconnect/reconnect, popup-close persistence).
 
+## Development verification
+
+The 0.2.0 development tree has passed scoped real Windows service, DPAPI and
+local tunnel tests. See [verification scope](docs/VALIDATION.md) for actual CI
+evidence and remaining interactive installer/UAC/Chrome gaps. This does not
+retroactively verify the older released v0.1.0 ZIP.
+
 ## What is verified
 
 - All Go unit tests pass, plus `go vet` and the race detector.
@@ -25,7 +32,7 @@ Chrome extension  <--native messaging-->  companion (Go)  <--WireGuard UDP-->  y
 
 ## What is NOT yet verified
 
-- **Runtime behavior on Windows** (install, native host registration, DPAPI storage, routing). This is the top known gap.
+- **Interactive Windows installation/UAC and desktop behavior**, plus non-admin Windows Chrome end-to-end. Scoped service/DPAPI/tunnel tests for development0.2 have passed; see the verification scope above.
 - WebRTC settings are applied but not packet-verified.
 
 ## Known limitations
@@ -77,8 +84,16 @@ GOOS=windows GOARCH=amd64 go build -o wg-companion.exe .
 Integration tests (Linux with Chromium installed):
 
 ```sh
+npm ci
+npx playwright install chromium
 node tests/integration.cjs
 ```
+
+## Build the Windows installer
+
+On Windows with Go 1.26, Git and NSIS 3.x installed, run
+`./tools/build-windows.ps1`. It builds the companion/tray, checks out a pinned
+wgcf revision, then creates an unsigned NSIS installer. It does not register WARP.
 
 ## Security notes
 

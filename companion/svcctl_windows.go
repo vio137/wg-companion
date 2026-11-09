@@ -176,11 +176,26 @@ func uninstallService() error {
 		return fmt.Errorf("open service: %w", err)
 	}
 	defer s.Close()
-	_, _ = s.Control(svc.Stop)
-	for i := 0; i < 20; i++ {
-		st, err := s.Query()
-		if err != nil || st.State == svc.Stopped {
+	st, err := s.Query()
+	if err != nil {
+		return err
+	}
+	if st.State != svc.Stopped {
+		if _, err = s.Control(svc.Stop); err != nil {
+			return fmt.Errorf("stop service (files retained): %w", err)
+		}
+	}
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		st, err = s.Query()
+		if err != nil {
+			return err
+		}
+		if st.State == svc.Stopped {
 			break
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("service stop timed out; files and registration retained")
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
