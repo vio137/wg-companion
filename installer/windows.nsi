@@ -8,7 +8,7 @@ OutFile "..\dist\WireGuard-Companion-Setup-0.2.0-preview-x64.exe"
 InstallDir "$PROGRAMFILES64\WireGuard Companion"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
-BrandingText "Local WireGuard tunnel · Windows preview"
+BrandingText "Local WireGuard tunnel - Windows preview"
 !define MUI_ICON "..\extension\app.ico"
 !define MUI_UNICON "..\extension\app.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "art\welcome.bmp"
