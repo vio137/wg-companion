@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "WireGuard Companion",
+  "version": "0.2.0",
+  "description": "Route Chrome through a WireGuard tunnel run by the bundled local wg-companion.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoNG0DQ+8MiVPo+QW5KlrFDsieKZNE5B8LGCw/KYvdCCey38S5xTZnPnY+3B67ut3Rrrnyv0Hr40kTif8IVVT2k1ZZNdnDETjPFi3bFy/QTcHP/ZxLi7HLEuRs/hVtAh4VNe7/0xCUHVhZnDO2LrN5TRfj1GJuGmVKZf4QaJIVe2MAsj3IlSi5DawCQniB0N2tcgn/q1oL5DqKNTsLUy7xiQeKp7jMKHAiYIdVQ4CMuTc5HhfIN74QZ41ReZBlBcogVr5aWDIIDl1FTdr9nX1o/IlUNXzsHTaAZJpgyZKX8ydyQjIMna6/RtkPLpFx9yD+MSRpN0rF5Hht+uGIQmVlQIDAQAB",
+  "minimum_chrome_version": "110",
+  "permissions": ["proxy", "nativeMessaging", "storage", "privacy", "alarms"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "WireGuard Companion",
+    "default_icon": { "16": "icons/off16.png", "32": "icons/off32.png" } },
+  "icons": { "16": "icons/on16.png", "48": "icons/on48.png", "128": "icons/on128.png" }
+}

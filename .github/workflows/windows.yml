@@ -1,0 +1,50 @@
+name: Windows verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['companion/**', 'installer/**', '.github/workflows/windows.yml']
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      WG_WINDOWS_SERVICE_TEST: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: companion/go.sum
+      - name: Vet Windows code
+        working-directory: companion
+        run: go vet ./...
+      - name: Real Windows DPAPI, tunnel, service and IPC tests
+        working-directory: companion
+        run: go test ./... -v -count=1 -timeout 300s
+      - name: Build companion and tray
+        working-directory: companion
+        run: |
+          New-Item -ItemType Directory -Force ../build/windows
+          go build -trimpath -ldflags="-s -w" -o ../build/windows/wg-companion.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'companion build failed' }
+          go build -trimpath -ldflags="-s -w -H windowsgui" -o ../build/windows/wg-tray.exe ./tray
+          if ($LASTEXITCODE -ne 0) { throw 'tray build failed' }
+      - name: Per-user native host registration smoke
+        shell: pwsh
+        run: |
+          ./build/windows/wg-companion.exe install -extension-id dfcikohmdkdkkaampidiknlgkognlkah
+          if ($LASTEXITCODE -ne 0) { throw 'native install failed' }
+          ./build/windows/wg-companion.exe uninstall
+          if ($LASTEXITCODE -ne 0) { throw 'native uninstall failed' }
+          ./build/windows/wg-companion.exe version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-binaries-not-a-release
+          path: build/windows/*.exe
+          retention-days: 7

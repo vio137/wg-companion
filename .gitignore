@@ -1,0 +1,10 @@
+node_modules/
+build/
+dist/
+*.exe
+*.test
+*.conf
+*.pem
+*.key
+.env*
+/companion/wg-companion
