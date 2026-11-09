@@ -2,12 +2,6 @@
 
 A Chrome extension that routes browser traffic through a **real WireGuard tunnel** via a small local companion program. The tunnel runs entirely in userspace on your own machine (wireguard-go + gVisor netstack) and is exposed to the browser as a local SOCKS5 proxy over Chrome's native messaging host model. No kernel driver, no separate WireGuard app, no remote relay service.
 
-> **Status: PREVIEW.** The companion and extension are fully tested on Linux/Chromium. The Windows binaries in this release are cross-compiled and PE-validated, but **have not yet been run on a real Windows machine**. Treat this as an early preview, not production software.
-
-## Architecture
-
-A Chrome extension that routes browser traffic through a **real WireGuard tunnel** via a small local companion program. The tunnel runs entirely in userspace on your own machine (wireguard-go + gVisor netstack) and is exposed to the browser as a local SOCKS5 proxy over Chrome's native messaging host model. No kernel driver, no separate WireGuard app, no remote relay service.
-
 > **Status: PREVIEW.** The companion and extension have passed local tests on Linux/Chromium. The Windows binaries in this release are cross-compiled and PE-validated, but **have not yet been run on a real Windows machine**. Treat this as an early preview, not production software.
 
 ## Architecture
@@ -44,17 +38,24 @@ Chrome extension  <--native messaging-->  companion (Go)  <--WireGuard UDP-->  y
 
 The companion can register a Cloudflare WARP peer for you with `wg-companion warp register`, but only when **you** run it: it prints Cloudflare's terms and requires an explicit accept flag. Registration is never performed automatically.
 
-## Install (Windows preview)
+## Install (released v0.1.0 Windows preview)
 
-1. Download `WireGuard-Companion-Windows-x64-preview.zip` from the release assets and unzip it.
-2. Load the extension: `chrome://extensions` -> Developer mode -> Load unpacked -> select the `extension/` folder.
-3. Run `wg-companion.exe install --extension-id <id shown in chrome://extensions>` as your normal user (registers the native messaging host for your account; no admin needed).
-4. In the extension popup, add a peer: paste your WireGuard server details (endpoint, server public key, your client keys, addresses). Keys are stored DPAPI-protected under your Windows user account.
-5. Connect. All proxying is fail-closed: if the companion dies, the browser loses connectivity rather than leaking.
+The released ZIP has its own README and Install.cmd. Extract the entire ZIP,
+run Install.cmd as your normal Windows user, then load
+`%LOCALAPPDATA%\WireGuardCompanion\extension` through Chrome's Developer mode
+and Load unpacked. Open Add profile, import a WireGuard `.conf` file or explicitly
+opt into WARP and its linked terms, select the profile and Connect.
 
-To remove: `wg-companion.exe uninstall`, then remove the extension.
+The packaged manifest pins extension ID `dfcikohmdkdkkaampidiknlgkognlkah`.
+Install.cmd registers that ID automatically. Do not load an unrelated unpacked
+copy from another folder. The ZIP's full README governs installation, removal,
+and preview limits. Windows runtime is still unverified.
 
-Linux/macOS work the same way via `wg-companion install` (native host manifest in the per-user Chrome config dir).
+For a custom source build only, register the ID displayed by Chrome using
+`wg-companion.exe install --extension-id <id>`.
+
+The service/installer revision under development is separate from v0.1.0.
+Do not apply its future instructions to the older preview ZIP.
 
 ## Build from source
 
