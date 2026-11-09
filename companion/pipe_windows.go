@@ -10,15 +10,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"sync"
-
-	"golang.org/x/sys/windows"
+	"time"
+	"wireguard-companion/internal/serviceipc"
 )
 
 type pipeController struct {
 	mu   sync.Mutex
-	conn *os.File
+	conn net.Conn
 	id   int
 }
 
@@ -41,22 +42,17 @@ func (p *pipeController) call(req *request) (*response, error) {
 
 // dialLocked opens the pipe with a raw handle so the server process can be
 // verified on this very connection before any bytes (or configs) cross it.
-func (p *pipeController) dialLocked() (*os.File, error) {
-	path, err := windows.UTF16PtrFromString(pipePath)
+func (p *pipeController) dialLocked() (net.Conn, error) {
+	self, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
-	h, err := windows.CreateFile(path, windows.GENERIC_READ|windows.GENERIC_WRITE, 0, nil, windows.OPEN_EXISTING, windows.SECURITY_SQOS_PRESENT|windows.SECURITY_IDENTIFICATION, 0)
+	c, err := serviceipc.Dial(pipePath, self)
 	if err != nil {
 		return nil, err
 	}
-	if err := verifyPipeServer(h); err != nil {
-		windows.CloseHandle(h)
-		return nil, fmt.Errorf("refusing untrusted pipe server: %w", err)
-	}
-	f := os.NewFile(uintptr(h), pipePath)
-	p.conn = f
-	return f, nil
+	p.conn = c
+	return c, nil
 }
 
 func (p *pipeController) closeLocked() error {
@@ -74,6 +70,7 @@ func (p *pipeController) roundTrip(req *request) (*response, error) {
 			return nil, fmt.Errorf("WG Companion service is not reachable (is it installed and running?): %w", err)
 		}
 	}
+	_ = p.conn.SetDeadline(time.Now().Add(5 * time.Second))
 	p.id++
 	req.ID = p.id
 	if err := writeMsg(p.conn, req); err != nil {

@@ -26,6 +26,9 @@ try {
     go build -trimpath -ldflags='-s -w' -o ../../build/windows/wgcf.exe .
     if ($LASTEXITCODE -ne 0) { throw 'wgcf build failed' }
   } finally { Pop-Location }
+  foreach ($name in 'wg-companion.exe','wg-tray.exe','wgcf.exe') {
+    if (-not (Test-Path (Join-Path $root "build/windows/$name"))) { throw "Missing installer payload: $name" }
+  }
   Push-Location installer
   try {
     makensis /V2 windows.nsi

@@ -13,8 +13,8 @@ do not turn off SmartScreen, antivirus or company policy to install.
    interactive desktop. Approve administrator access. Alternate-admin UAC is
    designed to retain the desktop user's control SID, not that admin's SID.
    Headless/session-0 installs fail closed. This behavior still needs Windows tests.
-3. Open WireGuard Companion from Start as your normal user. The tray starts on
-   that user's next sign-in. The service starts with Windows as LocalService.
+3. Open WireGuard Companion from Start as your normal user. The tray is opened when needed, not added to startup. The service starts
+   with Windows as LocalService.
 4. In chrome://extensions enable Developer mode, Load unpacked, and choose
    C:\Program Files\WireGuard Companion\extension (fixed protected install path).
    The extension ID is dfcikohmdkdkkaampidiknlgkognlkah.
@@ -47,6 +47,6 @@ SOCKS proxy while active. Disabling/removing Chrome extension clears its setting
 ## Remove
 
 Turn off in Chrome, remove the extension, quit tray, then uninstall in Windows Apps.
-The uninstaller stops/removes the service, manifest, startup entry and program files.
+The uninstaller stops/removes the service, manifest and program files.
 Saved profiles are retained. Delete the profile directory yourself only if wanted.
 Close Chrome and uninstall the current service preview before installing another.

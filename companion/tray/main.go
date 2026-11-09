@@ -8,17 +8,13 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/sys/windows"
-	"image"
-	"image/color"
-	"image/png"
 	"io"
-	"math"
 	"net"
 	"net/http"
 	"os"
@@ -27,6 +23,7 @@ import (
 	"sync"
 	"time"
 	"unsafe"
+	"wireguard-companion/internal/serviceipc"
 	"wireguard-companion/tray/dash"
 
 	"github.com/getlantern/systray"
@@ -99,72 +96,45 @@ func readMsg(c net.Conn, v any) error {
 
 func pipeStats() (stats, error) {
 	var st stats
-	out, err := runCompanion("service-status")
+	c, err := serviceipc.Dial(pipePath, companionExe())
 	if err != nil {
 		return st, err
 	}
-	if err = json.Unmarshal([]byte(out), &st); err != nil {
+	defer c.Close()
+	if err = writeMsg(c, &request{ID: 1, Cmd: "stats"}); err != nil {
 		return st, err
 	}
-	if st.State == "error" {
-		return st, fmt.Errorf("%s", st.LastError)
+	var r response
+	if err = readMsg(c, &r); err != nil {
+		return st, err
+	}
+	if !r.OK {
+		return st, fmt.Errorf("%s", r.Error)
+	}
+	b, err := json.Marshal(r.Data)
+	if err != nil {
+		return st, err
+	}
+	if err = json.Unmarshal(b, &st); err != nil {
+		return st, err
 	}
 	return st, nil
 }
 
-// ---------- tray icon rendering ----------
+// Real ICO assets are generated from the same glyphs as the extension.
+// No per-poll PNG encoding or image allocation.
+//
+//go:embed icons/*.ico
+var iconAssets embed.FS
+var iconCache = map[string][]byte{}
 
-var (
-	colOff  = color.NRGBA{139, 147, 167, 255}
-	colOn   = color.NRGBA{52, 211, 153, 255}
-	colBusy = color.NRGBA{90, 162, 255, 255}
-	colErr  = color.NRGBA{248, 113, 113, 255}
-	colRing = color.NRGBA{226, 232, 255, 220}
-)
-
-// iconFrame renders the status mark: a glass ring with a state core. Busy
-// frames orbit a highlight around the ring.
-func iconFrame(core color.NRGBA, busyStep int, ringOnly bool) []byte {
-	const sz = 64
-	img := image.NewNRGBA(image.Rect(0, 0, sz, sz))
-	cx, cy := sz/2, sz/2
-	for y := 0; y < sz; y++ {
-		for x := 0; x < sz; x++ {
-			dx, dy := float64(x-cx), float64(y-cy)
-			r := math.Hypot(dx, dy)
-			switch {
-			case r > 27 && r < 31:
-				a := uint8(colRing.A)
-				if busyStep >= 0 {
-					ang := math.Atan2(dy, dx)
-					highlight := math.Cos(ang - float64(busyStep)*math.Pi/3)
-					if highlight > 0.3 {
-						a = uint8(math.Min(255, float64(a)+highlight*120))
-					}
-				}
-				img.SetNRGBA(x, y, color.NRGBA{colRing.R, colRing.G, colRing.B, a})
-			case r <= 17 && !ringOnly:
-				img.SetNRGBA(x, y, core)
-			}
-		}
+func iconData(name string) []byte {
+	if b := iconCache[name]; b != nil {
+		return b
 	}
-	var buf bytes.Buffer
-	_ = png.Encode(&buf, img)
-	// Windows tray API requires ICO, not raw PNG. ICO supports PNG payloads.
-	data := buf.Bytes()
-	header := make([]byte, 22)
-	header[2] = 1
-	header[4] = 1
-	header[6] = 64
-	header[7] = 64
-	header[10] = 1
-	header[12] = 32
-	n := len(data)
-	for i := 0; i < 4; i++ {
-		header[14+i] = byte(n >> (8 * i))
-	}
-	header[18] = 22
-	return append(header, data...)
+	b, _ := iconAssets.ReadFile("icons/" + name + ".ico")
+	iconCache[name] = b
+	return b
 }
 
 // ---------- tray state ----------
@@ -236,33 +206,38 @@ func pollLoop() {
 		case err != nil:
 			tip = "WG Companion: service not running"
 			label = "Service not running"
-			icon = iconFrame(colOff, -1, true)
+			icon = iconData("blocked")
 			wait = pollSvcDown
-		case st.State == "connecting" || st.State == "ready":
+		case st.State == "connecting":
 			tip = "WG Companion: connecting to " + st.Endpoint
 			label = "Connecting..."
 			if rm {
-				icon = iconFrame(colBusy, -1, false)
+				icon = iconData("busy0")
 				wait = pollFast
 			} else {
-				icon = iconFrame(colBusy, frame, false)
+				icon = iconData(fmt.Sprintf("busy%d", frame%4))
 				wait = pollFast
 			}
 			frame++
+		case st.State == "ready":
+			tip = "WG Companion: waiting for a peer handshake"
+			label = "Waiting for peer"
+			icon = iconData("ready")
+			wait = pollSteady
 		case st.State == "connected":
 			tip = fmt.Sprintf("WG Companion: connected to %s", st.Endpoint)
 			label = "Connected"
-			icon = iconFrame(colOn, -1, false)
+			icon = iconData("on")
 			wait = pollSteady
 		case st.State == "error":
 			tip = "WG Companion: error - " + st.LastError
 			label = "Error"
-			icon = iconFrame(colErr, -1, false)
+			icon = iconData("error")
 			wait = pollSteady
 		default:
 			tip = "WG Companion: disconnected"
 			label = "Disconnected"
-			icon = iconFrame(colOff, -1, false)
+			icon = iconData("off")
 			wait = pollSteady
 		}
 		systray.SetIcon(icon)
