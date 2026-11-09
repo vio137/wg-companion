@@ -74,7 +74,7 @@ SectionEnd
 Section "Uninstall"
  SetRegView 64
  SetShellVarContext all
- MessageBox MB_OKCANCEL "Turn off and remove the Chrome extension first. Quit the tray app. Saved encrypted profiles will be kept. Continue?" IDOK +2
+ MessageBox MB_OKCANCEL "Turn off and remove the Chrome extension first. Quit the tray app. Saved encrypted profiles will be kept. Continue?" /SD IDOK IDOK +2
  Abort
  ExecWait '"$INSTDIR\wg-companion.exe" uninstall-service' $0
  ${If} $0 != 0

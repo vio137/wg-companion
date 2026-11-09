@@ -1,6 +1,9 @@
 # Windows service preview 0.2.0
 
-UNVERIFIED WINDOWS RUNTIME. Build checks are not installation or security tests.
+INTERACTIVE INSTALLATION/REMOVAL AND DESKTOP BEHAVIOR ARE NOT YET VERIFIED.
+Scoped real Windows service, DPAPI and local HTTP/DNS tests passed; see
+docs/VALIDATION.md in source. Build checks and installer screenshots do not
+verify installation, UAC ownership, desktop tray or non-admin Chrome routing.
 Do not use this preview for sensitive activity. Unsigned installer and binaries;
 do not turn off SmartScreen, antivirus or company policy to install.
 
